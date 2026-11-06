@@ -636,6 +636,51 @@ b { font-weight: 800; }
 .flash { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; pointer-events: none; z-index: 5; background: radial-gradient(circle, #fff 0 20%, #fde047 40%, transparent 70%); animation: flash .25s forwards; }
 @keyframes flash { to { transform: scale(2.2); opacity: 0; } }
 
+/* 🧱 벽돌깨기 */
+.bricks { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; transition: filter .2s; }
+.bk-hud { display: flex; align-items: center; gap: 14px; }
+.bk-prompt { text-align: center; background: #fff; color: var(--ink); padding: 8px 26px; border-radius: 20px; box-shadow: 0 7px 0 #c2410c; }
+.bk-prompt small { color: #64748b; font-weight: 700; font-size: .8rem; }
+.bk-prompt b { display: block; font: 2rem var(--fun); font-weight: 400; }
+.bk-lives { font-size: 1.3rem; letter-spacing: 3px; }
+.bk-lives .lost { opacity: .4; }
+.bk-cv { flex: 1; width: min(720px, 100%); min-height: 280px; border-radius: 20px; touch-action: none; cursor: none;
+  background: radial-gradient(600px 300px at 50% 0%, rgba(249, 115, 22, .25), transparent), linear-gradient(180deg, #1e1b4b, #0f0a2e); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .12); }
+.bk-help, .bl-help { color: var(--muted); font-size: .8rem; text-align: center; }
+
+/* 📦 단어 블록 */
+.blocks { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; grid-template-rows: 1fr auto auto; gap: 10px; padding: 10px; transition: filter .2s; }
+.bl-side { display: grid; align-content: start; gap: 10px; }
+.bl-q { background: #fff; color: var(--ink); padding: 14px; border-radius: 20px; box-shadow: 0 7px 0 #4338ca; display: grid; gap: 8px; }
+.bl-q small { color: #64748b; font-weight: 700; font-size: .8rem; }
+.bl-ko { font: 1.8rem var(--fun); font-weight: 400; }
+.bl-opts { display: grid; gap: 6px; }
+.bl-opt { position: relative; text-align: left; padding: 10px 10px 10px 38px; border-radius: 12px; background: #eef2ff; font: 700 1.1rem var(--en); color: var(--ink); border: 2px solid #c7d2fe; }
+.bl-opt i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #6366f1; color: #fff; font: 700 .8rem var(--en); font-style: normal; }
+.bl-opt.right { background: #bbf7d0; border-color: #22c55e; }
+.bl-opt.wrong { background: #fecaca; border-color: #ef4444; }
+.bl-opt.gone { opacity: .2; pointer-events: none; }
+.bl-state { font-size: .82rem; font-weight: 700; color: #64748b; }
+.bl-state.good { color: #b45309; }
+.bl-state.bad { color: #b91c1c; }
+.bl-info { background: rgba(0, 0, 0, .25); border-radius: 14px; padding: 10px 14px; font-weight: 700; color: var(--muted); }
+.bl-info b { font: 700 1.5rem var(--en); color: #fff; margin-left: 4px; }
+.bl-cv { width: 100%; height: 100%; min-height: 300px; }
+.bl-pad { grid-column: 1 / -1; display: none; justify-content: center; gap: 8px; }
+.bl-pad button { width: 56px; height: 50px; border-radius: 14px; background: #fff; color: var(--ink); font-size: 1.4rem; font-weight: 800; box-shadow: 0 4px 0 #a5b4fc; }
+.bl-pad button.bl-drop { width: auto; padding: 0 14px; font-size: 1rem; background: #6366f1; color: #fff; box-shadow: 0 4px 0 #3730a3; }
+.bl-pad button:active { transform: translateY(3px); box-shadow: none; }
+.bl-help { grid-column: 1 / -1; }
+@media (hover: none), (max-width: 760px) { .bl-pad { display: flex; } }
+@media (max-width: 760px) {
+  .blocks { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto auto; }
+  .bl-q { grid-template-columns: auto 1fr; align-items: center; padding: 10px; }
+  .bl-q small, .bl-state { grid-column: 1 / -1; }
+  .bl-opts { grid-template-columns: repeat(3, 1fr); grid-column: 1 / -1; }
+  .bl-opt { padding: 8px 4px 8px 30px; font-size: .9rem; }
+  .bl-info { display: none; }
+}
+
 /* QR 코드 */
 .t-entry { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .t-entry-r { display: grid; gap: 10px; }

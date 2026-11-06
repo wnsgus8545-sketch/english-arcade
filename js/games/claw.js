@@ -6,7 +6,7 @@ import { writePrompt } from '../write.js';
 const DOLLS = ['🧸', '🐰', '🐻', '🐥', '🐼', '🦊', '🐸', '🐧'];
 
 export default {
-  id: 'claw', title: '인형뽑기', emoji: '🧸', color: '#a855f7', time: 75, isNew: true,
+  id: 'claw', title: '인형뽑기', emoji: '🧸', color: '#a855f7', time: 75,
   desc: '집게가 좌우로 움직여요. 뜻에 맞는 인형 위에서 [뽑기!] 타이밍을 맞춰요.',
   tags: ['🎯 타이밍', '✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],

@@ -10,7 +10,7 @@ const ROWS = 3, PER_ROW = 2;
 const ICONS = ['🎯', '🦆', '🎈', '⭐'];
 
 export default {
-  id: 'shoot', title: '단어 사격', emoji: '🎯', color: '#14b8a6', time: 60, isNew: true,
+  id: 'shoot', title: '단어 사격', emoji: '🎯', color: '#14b8a6', time: 60,
   desc: '움직이는 과녁 중 뜻에 맞는 영어를 쏴요! 총알은 6발, 빗나가면 감점.',
   tags: ['🔫 조준', '✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],

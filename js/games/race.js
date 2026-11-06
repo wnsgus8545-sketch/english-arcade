@@ -6,7 +6,7 @@ import { writePrompt } from '../write.js';
 const LANES = 3;
 
 export default {
-  id: 'race', title: '단어 레이싱', emoji: '🏎️', color: '#ef4444', time: 70, isNew: true,
+  id: 'race', title: '단어 레이싱', emoji: '🏎️', color: '#ef4444', time: 70,
   desc: '← → 로 차선을 바꿔 뜻에 맞는 영어 게이트를 통과! 맞힐수록 빨라져요.',
   tags: ['🏁 스피드', '✍️ 피트 스톱 쓰기'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],
