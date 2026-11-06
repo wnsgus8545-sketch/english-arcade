@@ -68,6 +68,26 @@ function renderEmpty() {
   app.querySelector('.t-body').innerHTML = '<div class="t-box" style="text-align:center"><h2>먼저 반을 하나 만들어 주세요 👆</h2><p>위의 «＋ 새 반 만들기» 를 누르면 학생들이 들어올 반 코드가 생겨요.</p></div>';
 }
 
+/** 주소를 QR 코드(SVG)로 — 휴대폰 카메라로 찍으면 반 코드까지 채워진 입장 화면이 열린다 */
+function qrSvg(text) {
+  if (!window.qrcode) return '<div class="qr-fail">QR을 불러오지 못했어요<br>(인터넷 연결 확인)</div>';
+  const q = window.qrcode(0, 'M');
+  q.addData(text);
+  q.make();
+  return q.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+}
+
+function openQR(code, link) {
+  const p = h(`<div class="qr-full"><button class="btn close">✕ 닫기</button>
+    <div class="qr-title">📱 휴대폰 카메라로 찍어서 들어오세요</div>
+    <div class="qr-big">${qrSvg(link)}</div>
+    <div class="qr-code-line">반 코드 <b>${code}</b></div>
+    <div class="qr-url">${esc(link)}</div></div>`);
+  document.body.append(p);
+  p.querySelector('.close').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); p.remove(); };
+  p.requestFullscreen?.().catch(() => {});
+}
+
 const toText = (list) => list.map((w) => [w.en, w.ko, w.ex].filter(Boolean).join(' | ')).join('\n');
 function parseWords(text) {
   return text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -88,9 +108,15 @@ async function openClass(code) {
     <div style="display:grid;gap:16px">
       <div class="t-box">
         <h2>📮 학생 입장 안내</h2>
-        <div class="t-row"><div class="t-code">${code}</div><button class="btn gold proj">📺 전체 화면 순위</button></div>
+        <div class="t-entry">
+          <button class="qr-small" title="크게 보기">${qrSvg(link)}</button>
+          <div class="t-entry-r">
+            <div class="t-code">${code}</div>
+            <div class="t-row"><button class="btn gold qr">📱 QR 크게 띄우기</button><button class="btn gold proj">📺 전체 화면 순위</button></div>
+          </div>
+        </div>
         <div class="t-link"><input readonly value="${esc(link)}"><button class="btn copy">복사</button></div>
-        <p>학생은 이 주소로 들어와 <b>반 코드 · 번호 · 닉네임</b>만 넣으면 돼요. 실명 대신 닉네임을 쓰게 해 주세요.</p>
+        <p>학생은 QR을 찍거나 주소로 들어와 <b>번호 · 닉네임</b>만 넣으면 돼요 (반 코드는 자동으로 채워져요). 실명 대신 닉네임을 쓰게 해 주세요.</p>
       </div>
       <div class="t-box">
         <h2>📚 단어 목록</h2>
@@ -134,6 +160,8 @@ async function openClass(code) {
     await S.resetScores(code); toast('전체 점수를 0으로 만들었어요', 'good');
   };
   body.querySelector('.proj').onclick = () => openProjector(code, link);
+  body.querySelector('.qr').onclick = () => openQR(code, link);
+  body.querySelector('.qr-small').onclick = () => openQR(code, link);
 
   const tbody = body.querySelector('tbody'), pc = body.querySelector('.pc');
   subs.push(S.subPlayers(code, (p) => {
@@ -155,7 +183,7 @@ async function openClass(code) {
 
 function openProjector(code, link) {
   const p = h(`<div class="projector"><button class="btn close">✕ 닫기</button>
-    <header><div><div class="plink">반 코드</div><div class="pcode">${code}</div></div><div class="plink">${esc(link)}</div></header>
+    <header><div class="pqr">${qrSvg(link)}</div><div><div class="plink">📱 QR을 찍거나 반 코드를 넣으세요</div><div class="pcode">${code}</div><div class="plink">${esc(link)}</div></div></header>
     <ol class="board"></ol></div>`);
   document.body.append(p);
   p.querySelector('.close').onclick = () => p.remove();

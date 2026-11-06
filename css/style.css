@@ -462,4 +462,19 @@ b { font-weight: 800; }
 .projector .board { max-height: none; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-content: start; gap: 1.2vh; font-size: 2.6vh; }
 .projector .board li { padding: 1.4vh 1.2vw; grid-template-columns: 4vh 4vh 1fr auto; }
 .projector .close { position: absolute; right: 2vw; top: 2vh; }
+/* QR 코드 */
+.t-entry { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.t-entry-r { display: grid; gap: 10px; }
+.qr-small { width: 132px; height: 132px; padding: 6px; border-radius: 16px; background: #fff; box-shadow: 0 5px 0 #a89ee0; transition: transform .15s; }
+.qr-small:hover { transform: scale(1.05); }
+.qr-small svg, .qr-big svg, .pqr svg { display: block; width: 100%; height: 100%; }
+.qr-fail { color: var(--ink); font-size: .75rem; display: grid; place-items: center; height: 100%; text-align: center; }
+.qr-full { position: fixed; inset: 0; z-index: 310; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vh; padding: 3vh; background: linear-gradient(180deg, #251a5c, #120c30); }
+.qr-full .close { position: absolute; right: 2vw; top: 2vh; }
+.qr-title { font: 4.2vh var(--fun); }
+.qr-big { width: min(62vh, 86vw); aspect-ratio: 1; padding: 2vh; border-radius: 3vh; background: #fff; box-shadow: 0 1.2vh 0 var(--violet), 0 0 80px rgba(124, 92, 255, .5); }
+.qr-code-line { font: 3.4vh var(--fun); color: var(--muted); }
+.qr-code-line b { font: 700 7vh var(--en); color: var(--yellow); letter-spacing: .12em; margin-left: 1vw; vertical-align: middle; }
+.qr-url { color: var(--muted); font-size: 2vh; }
+.projector header .pqr { width: 18vh; height: 18vh; padding: 1vh; border-radius: 2vh; background: #fff; flex: none; }
 @media (max-width: 900px) { .t-grid { grid-template-columns: 1fr; } }

@@ -51,6 +51,7 @@ function showLogin(code = '') {
   </div>`);
   app.replaceChildren(v);
   const f = v.querySelector('form'), err = v.querySelector('.err');
+  if (code) setTimeout(() => f.num.focus(), 50); // QR로 들어오면 반 코드는 채워져 있으니 번호부터
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     sfx.click();
