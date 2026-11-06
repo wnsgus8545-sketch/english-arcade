@@ -655,7 +655,16 @@ b { font-weight: 800; }
 .bl-q small { color: #64748b; font-weight: 700; font-size: .8rem; }
 .bl-ko { font: 1.8rem var(--fun); font-weight: 400; }
 .bl-opts { display: grid; gap: 6px; }
-.bl-opt { position: relative; text-align: left; padding: 10px 10px 10px 38px; border-radius: 12px; background: #eef2ff; font: 700 1.1rem var(--en); color: var(--ink); border: 2px solid #c7d2fe; }
+.bl-opt { position: relative; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px 8px 38px; border-radius: 12px; background: #eef2ff; font: 700 1.1rem var(--en); color: var(--ink); border: 2px solid #c7d2fe; transition: transform .12s; }
+.bl-opt:hover { transform: translateX(3px); }
+.mini { display: inline-grid; grid-template-columns: repeat(var(--w), 11px); gap: 2px; flex: none; }
+.mini u { width: 11px; height: 11px; border-radius: 3px; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .35); }
+.bl-timer { height: 7px; border-radius: 9px; background: #e2e8f0; overflow: hidden; }
+.bl-timer i { display: block; height: 100%; background: linear-gradient(90deg, #f43f5e, #6366f1); transform-origin: left; }
+.bl-q.asking { animation: askPulse 1s ease-in-out infinite; }
+@keyframes askPulse { 50% { box-shadow: 0 7px 0 #4338ca, 0 0 0 6px rgba(255, 210, 63, .6); } }
+.bl-q:not(.asking) .bl-opt { opacity: .55; }
+.bl-q:not(.asking) .bl-opt.right, .bl-q:not(.asking) .bl-opt.wrong { opacity: 1; }
 .bl-opt i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #6366f1; color: #fff; font: 700 .8rem var(--en); font-style: normal; }
 .bl-opt.right { background: #bbf7d0; border-color: #22c55e; }
 .bl-opt.wrong { background: #fecaca; border-color: #ef4444; }
@@ -677,7 +686,10 @@ b { font-weight: 800; }
   .bl-q { grid-template-columns: auto 1fr; align-items: center; padding: 10px; }
   .bl-q small, .bl-state { grid-column: 1 / -1; }
   .bl-opts { grid-template-columns: repeat(3, 1fr); grid-column: 1 / -1; }
-  .bl-opt { padding: 8px 4px 8px 30px; font-size: .9rem; }
+  .bl-opt { flex-direction: column; justify-content: center; gap: 5px; padding: 8px 4px; font-size: .92rem; text-align: center; }
+  .bl-opt b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bl-opt i { left: 5px; top: 5px; transform: none; width: 18px; height: 18px; font-size: .7rem; }
+  .bl-opt:hover { transform: none; }
   .bl-info { display: none; }
 }
 

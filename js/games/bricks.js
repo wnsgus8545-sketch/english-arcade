@@ -55,11 +55,12 @@ export default {
       const live = bricks.filter((b) => b.alive);
       if (live.length < 5) { newWall(); return newPrompt(); }
       target = next();
-      const ws = shuffle([target, ...sample(ctx.words, live.length - 1, [target])]);
-      // 단어가 모자라면 오답 단어를 돌려 쓴다 (정답은 하나만)
-      const others = ws.filter((w) => w !== target);
-      live.forEach((b, i) => { b.word = ws[i] || others[i % Math.max(1, others.length)]; });
-      if (!live.some((b) => b.word === target)) live[(Math.random() * live.length) | 0].word = target;
+      // 정답은 «공이 닿을 수 있는» 벽돌에만 — 바로 아래에 다른 벽돌이 없는 벽돌 (각 열의 맨 아랫줄)
+      const open = live.filter((b) => !live.some((o) => o.c === b.c && o.r > b.r));
+      const tb = open[(Math.random() * open.length) | 0];
+      const others = sample(ctx.words, live.length - 1, [target]);
+      let k = 0;
+      live.forEach((b) => { b.word = b === tb ? target : others[k++ % Math.max(1, others.length)]; });
       promptEl.textContent = target.ko;
       bump(promptEl);
     }
@@ -207,6 +208,7 @@ export default {
     document.addEventListener('keyup', onKey);
     newWall();
     newPrompt();
+    box._dbg = () => ({ bricks, target }); // 점검용 (화면에는 안 보임)
 
     return {
       onItem(id) {

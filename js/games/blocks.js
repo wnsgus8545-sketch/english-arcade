@@ -26,66 +26,73 @@ const rot = (m) => m[0].map((_, i) => m.map((r) => r[i]).reverse());
 
 export default {
   id: 'blocks', title: '단어 블록', emoji: '📦', color: '#6366f1', time: 120, isNew: true,
-  desc: '떨어지는 블록을 쌓아 줄을 지워요. 다음 블록은 단어 문제로! 틀리면 고물 블록이 와요.',
+  desc: '뜻에 맞는 단어 블록을 골라야 그 블록을 쓸 수 있어요! 틀리면 고물 블록. 줄을 지워 점수를 얻어요.',
   tags: ['🧩 퍼즐', '✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],
   start(ctx) {
     const box = h(`<div class="blocks">
       <div class="bl-side">
-        <div class="bl-q"><small>다음 블록 고르기 — 이 뜻은?</small><b class="bl-ko"></b><div class="bl-opts"></div><div class="bl-state"></div></div>
+        <div class="bl-q"><small>이 뜻의 블록을 골라야 쓸 수 있어요!</small><b class="bl-ko"></b><div class="bl-timer"><i></i></div><div class="bl-opts"></div><div class="bl-state"></div></div>
         <div class="bl-info"><span>지운 줄 <b class="bl-lines">0</b></span></div>
       </div>
       <canvas class="bl-cv"></canvas>
       <div class="bl-pad"><button data-a="L">◀</button><button data-a="R">⟳</button><button data-a="D">⬇</button><button data-a="Rt">▶</button><button data-a="H" class="bl-drop">⤓ 떨구기</button></div>
-      <div class="bl-help">← → 이동 · ↑ 돌리기 · ↓ 천천히 · 스페이스 바로 떨구기 · 1 2 3 으로 단어 고르기</div>
+      <div class="bl-help">1 2 3 으로 블록 고르기 · ← → 이동 · ↑ 돌리기 · ↓ 천천히 · 스페이스 바로 떨구기</div>
     </div>`);
     ctx.stage.append(box);
     const cv = box.querySelector('.bl-cv'), g = cv.getContext('2d');
     const koEl = box.querySelector('.bl-ko'), optsEl = box.querySelector('.bl-opts'), stateEl = box.querySelector('.bl-state'), linesEl = box.querySelector('.bl-lines');
+    const qEl = box.querySelector('.bl-q'), tbar = box.querySelector('.bl-timer i');
     const next = deck(ctx.words);
     const grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-    let cur = null, queued = null, q = null, alive = true, busy = false, fall = 0, lines = 0, cell = 20, W = 0, H = 0;
+    const CHOOSE_SEC = 8;
+    let cur = null, q = null, alive = true, busy = false, fall = 0, lines = 0, cell = 20, W = 0, H = 0, chooseLeft = 0;
 
-    // ── 단어 문제로 다음 블록 고르기 ──
-    function newQuestion() {
+    // ── 블록 고르기 = 단어 문제 ── 고른 단어가 붙은 블록이 내 블록이 된다
+    const mini = (s) => `<span class="mini" style="--w:${s.m[0].length}">${s.m.flat().map((v) => `<u style="${v ? `background:${s.c}` : 'visibility:hidden'}"></u>`).join('')}</span>`;
+    function choose() {
+      if (!alive) return;
+      cur = null;
       const w = next();
-      const opts = shuffle([w, ...sample(ctx.words, 2, [w])]);
-      q = { w, opts, answered: false };
+      const words = shuffle([w, ...sample(ctx.words, 2, [w])]);
+      const shapes = shuffle(GOOD).slice(0, 3); // 블록 모양은 셋 다 다르게 — 원하는 모양을 얻으려면 단어를 알아야 한다
+      q = { w, opts: words.map((word, i) => ({ word, shape: shapes[i] })), answered: false };
       koEl.textContent = w.ko;
       bump(koEl);
-      optsEl.innerHTML = opts.map((o, i) => `<button class="bl-opt" data-i="${i}"><i>${i + 1}</i>${esc(o.en)}</button>`).join('');
-      stateEl.textContent = '고르지 않으면 보통 블록이 와요';
+      optsEl.innerHTML = q.opts.map((o, i) => `<button class="bl-opt" data-i="${i}"><i>${i + 1}</i>${mini(o.shape)}<b>${esc(o.word.en)}</b></button>`).join('');
+      stateEl.textContent = '⏳ 블록을 골라야 게임이 진행돼요';
       stateEl.className = 'bl-state';
+      qEl.classList.add('asking');
+      chooseLeft = CHOOSE_SEC;
     }
     function answer(i) {
-      if (!q || q.answered || busy) return;
+      if (!q || q.answered || busy || cur) return;
       q.answered = true;
-      const btn = optsEl.children[i];
-      if (q.opts[i] === q.w) {
+      qEl.classList.remove('asking');
+      const btn = optsEl.children[i], o = q.opts[i];
+      if (o && o.word === q.w) {
         btn.classList.add('right');
         ctx.award(8, { el: btn });
-        const s = pick(GOOD);
-        queued = { ...s, gold: true };
-        stateEl.textContent = '✨ 다음은 황금 블록! (줄 점수 2배)';
+        stateEl.textContent = '✨ 정답! 고른 블록이 황금 블록으로 (줄 점수 2배)';
         stateEl.className = 'bl-state good';
-      } else {
-        btn.classList.add('wrong');
-        optsEl.children[q.opts.indexOf(q.w)].classList.add('right');
-        const shielded = ctx.miss(btn);
-        queued = shielded ? { ...pick(GOOD) } : { ...pick(JUNK), junk: true };
-        stateEl.textContent = shielded ? '🛡️ 방패 덕분에 보통 블록' : '💀 다음은 고물 블록…';
-        stateEl.className = 'bl-state bad';
+        const mine = q; setTimeout(() => q === mine && spawn({ ...o.shape, gold: true }), 250);
+        return;
       }
+      if (btn) btn.classList.add('wrong');
+      optsEl.children[q.opts.findIndex((x) => x.word === q.w)]?.classList.add('right');
+      const shielded = ctx.miss(btn || qEl);
+      stateEl.textContent = !o ? '⏰ 시간 초과 — 💀 고물 블록이 떨어져요' : shielded ? '🛡️ 방패 덕분에 고른 블록 그대로' : '💀 틀려서 고물 블록이 떨어져요';
+      stateEl.className = 'bl-state bad';
+      const mine = q; setTimeout(() => q === mine && spawn(shielded && o ? { ...o.shape } : { ...pick(JUNK), junk: true }), 450);
     }
     optsEl.addEventListener('pointerdown', (e) => { const b = e.target.closest('.bl-opt'); if (b) { e.preventDefault(); answer(+b.dataset.i); } });
 
     // ── 블록 엔진 ──
-    function spawn() {
-      const s = queued || { ...pick(GOOD) };
-      queued = null;
+    function spawn(s) {
+      if (!alive) return;
       cur = { m: s.m.map((r) => [...r]), c: s.c, gold: !!s.gold, junk: !!s.junk, x: 0, y: 0 };
       cur.x = Math.floor((COLS - cur.m[0].length) / 2);
-      newQuestion();
+      fall = 0;
       if (hits(cur.m, cur.x, cur.y)) ctx.end('📦 블록이 꼭대기까지 쌓였어요');
     }
     function hits(m, x, y) {
@@ -126,11 +133,11 @@ export default {
         if (n >= 2) sfx.combo();
         if (lines >= 4 && Math.floor((lines - n) / 4) < Math.floor(lines / 4)) {
           busy = true;
-          writePrompt(ctx, next(), { label: '📦 보너스 · 쓰기 찬스', base: 15 }).then(() => { busy = false; spawn(); });
+          writePrompt(ctx, next(), { label: '📦 보너스 · 쓰기 찬스', base: 15 }).then(() => { busy = false; choose(); });
           return;
         }
       }
-      spawn();
+      choose();
     }
     function hardDrop() { if (!cur || busy) return; while (move(0, 1)); fall = 0; lock(); }
 
@@ -174,6 +181,12 @@ export default {
     ctx.onTick((dt) => {
       if (!alive) return;
       resize();
+      // 고르는 시간 — 다 지나면 고물 블록
+      if (!busy && !cur && q && !q.answered) {
+        chooseLeft -= dt;
+        tbar.style.transform = `scaleX(${Math.max(0, chooseLeft / CHOOSE_SEC)})`;
+        if (chooseLeft <= 0) answer(-1);
+      }
       if (!busy && cur) {
         fall += dt;
         const speed = Math.max(0.18, 0.75 - lines * 0.025);
@@ -197,22 +210,23 @@ export default {
       e.preventDefault();
     };
     document.addEventListener('keydown', onKey);
-    spawn();
+    choose();
 
     return {
       onItem(id) {
         if (busy || !q) return false;
         if (id === 'hint') {
           if (q.answered) return false;
-          const wrong = [...optsEl.children].filter((b, i) => q.opts[i] !== q.w && !b.disabled);
+          const wrong = [...optsEl.children].filter((b, i) => q.opts[i].word !== q.w && !b.disabled);
           if (!wrong.length) return false;
           wrong[0].disabled = true; wrong[0].classList.add('gone');
+          chooseLeft += 3;
           return true;
         }
         if (id === 'skip') {
-          // 패스 = 지금 블록을 버리고 새 블록 (쌓인 게 위험할 때)
-          if (!cur) return false;
-          cur = null; spawn(); return true;
+          // 패스 = 고르는 중이면 다른 문제로 · 놓는 중이면 지금 블록을 버리고 새로 고르기
+          choose();
+          return true;
         }
         return false;
       },
