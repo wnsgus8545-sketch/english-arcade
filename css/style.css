@@ -693,6 +693,24 @@ b { font-weight: 800; }
   .bl-info { display: none; }
 }
 
+/* 🫧 단어 버블팡 */
+.bubble { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; transition: filter .2s; }
+.bb-hud { display: flex; align-items: center; gap: 14px; }
+.bb-prompt { text-align: center; background: #fff; color: var(--ink); padding: 8px 26px; border-radius: 20px; box-shadow: 0 7px 0 #0369a1; }
+.bb-prompt small { color: #64748b; font-weight: 700; font-size: .8rem; }
+.bb-prompt b { display: block; font: 2rem var(--fun); font-weight: 400; }
+.bb-lives { font-size: 1.3rem; letter-spacing: 3px; }
+.bb-lives .lost { opacity: .4; }
+.bb-cv { flex: 1; width: 100%; min-height: 260px; touch-action: none; }
+.bb-pad { display: none; width: min(560px, 100%); gap: 8px; align-items: center; }
+.bb-pad span { flex: 1; }
+.bb-pad button { width: 64px; height: 56px; border-radius: 16px; background: #fff; color: var(--ink); font-size: 1.5rem; font-weight: 800; box-shadow: 0 4px 0 #7dd3fc; user-select: none; -webkit-user-select: none; }
+.bb-pad button.jp, .bb-pad button.fire { width: auto; padding: 0 16px; font-size: 1.05rem; }
+.bb-pad button.fire { background: #0ea5e9; color: #fff; box-shadow: 0 4px 0 #0369a1; }
+.bb-pad button:active { transform: translateY(3px); box-shadow: none; }
+.bb-help { color: var(--muted); font-size: .8rem; text-align: center; }
+@media (hover: none), (max-width: 760px) { .bb-pad { display: flex; } }
+
 /* QR 코드 */
 .t-entry { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .t-entry-r { display: grid; gap: 10px; }

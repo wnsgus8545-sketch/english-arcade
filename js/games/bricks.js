@@ -7,7 +7,7 @@ const COLS = 5, ROWS = 3;
 const COLORS = ['#ff5fa2', '#7c5cff', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444'];
 
 export default {
-  id: 'bricks', title: '단어 벽돌깨기', emoji: '🧱', color: '#f97316', time: 90, isNew: true,
+  id: 'bricks', title: '단어 벽돌깨기', emoji: '🧱', color: '#f97316', time: 90,
   desc: '공을 튕겨 뜻에 맞는 영어 벽돌만 깨요! 다른 벽돌은 안 깨지니까 잘 조준해요.',
   tags: ['🏓 조준', '✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],

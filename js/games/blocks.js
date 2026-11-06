@@ -25,7 +25,7 @@ const LINE_PTS = [0, 15, 40, 80, 130];
 const rot = (m) => m[0].map((_, i) => m.map((r) => r[i]).reverse());
 
 export default {
-  id: 'blocks', title: '단어 블록', emoji: '📦', color: '#6366f1', time: 120, isNew: true,
+  id: 'blocks', title: '단어 블록', emoji: '📦', color: '#6366f1', time: 120,
   desc: '뜻에 맞는 단어 블록을 골라야 그 블록을 쓸 수 있어요! 틀리면 고물 블록. 줄을 지워 점수를 얻어요.',
   tags: ['🧩 퍼즐', '✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],
