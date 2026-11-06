@@ -284,7 +284,7 @@ export default {
     function shoot() {
       if (busy || me.cool > 0) return;
       me.cool = buff.candy ? 0.16 : 0.38;
-      shots.push({ x: me.x + me.w / 2 + me.face * 20, y: me.y + me.h / 2, vx: me.face * (buff.candy ? 560 : 470), r: 16, t: 0, seed: Math.random() * 6 });
+      shots.push({ x: me.x + me.w / 2 + me.face * 26, y: me.y + me.h / 2 + 4, vx: me.face * (buff.candy ? 560 : 470), r: 16, t: 0, seed: Math.random() * 6 });
       sfx.click();
     }
     function jump() { if (busy || !me.onGround) return; me.vy = -JUMP; me.onGround = false; }
@@ -311,6 +311,43 @@ export default {
       g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(ch, 0, 0);
       g.restore();
+    }
+    // 주인공 «방울이» — 기기마다 방향이 다른 이모지 대신 직접 그린다. 눈·입이 있는 쪽 = 거품이 나가는 쪽
+    function drawHero(cx, cy, face) {
+      g.save();
+      g.translate(cx, cy);
+      g.scale(face, 1); // 오른쪽(1) 기준으로 그리고, 왼쪽이면 통째로 뒤집는다
+      const bob = Math.sin(tAll * 8) * (me.onGround && me.vx ? 1.5 : 0);
+      g.translate(0, bob);
+      // 꼬리 지느러미 (등 쪽)
+      g.fillStyle = '#38bdf8';
+      g.beginPath(); g.moveTo(-14, 2); g.lineTo(-26, -8); g.lineTo(-24, 10); g.closePath(); g.fill();
+      // 몸
+      const body = g.createRadialGradient(-5, -8, 4, 0, 0, 22);
+      body.addColorStop(0, '#e0f7ff'); body.addColorStop(0.55, '#7dd3fc'); body.addColorStop(1, '#0ea5e9');
+      g.fillStyle = body;
+      g.beginPath(); g.ellipse(0, 0, 19, 18, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#0369a1'; g.lineWidth = 2; g.stroke();
+      // 머리 위 물방울 더듬이
+      g.fillStyle = '#bae6fd';
+      g.beginPath(); g.arc(-2, -22, 4, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#0369a1'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-1, -18); g.lineTo(-1, -16); g.stroke();
+      // 눈 (앞쪽)
+      g.fillStyle = '#fff'; g.beginPath(); g.ellipse(8, -5, 6, 7, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#0f172a'; g.beginPath(); g.arc(10, -4, 3.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(11, -5.5, 1.1, 0, Math.PI * 2); g.fill();
+      // 볼
+      g.fillStyle = 'rgba(244,114,182,.55)'; g.beginPath(); g.ellipse(4, 6, 4, 2.5, 0, 0, Math.PI * 2); g.fill();
+      // 입 (앞쪽 끝 — 여기서 거품이 나간다)
+      g.fillStyle = '#0369a1'; g.beginPath(); g.ellipse(17, 5, 3, 2.6, 0, 0, Math.PI * 2); g.fill();
+      // 쏜 직후엔 입 앞에 작은 거품
+      if (me.cool > 0.2) { g.strokeStyle = '#e0f2fe'; g.lineWidth = 2; g.beginPath(); g.arc(25, 4, 4, 0, Math.PI * 2); g.stroke(); }
+      g.restore();
+      // 바라보는 쪽을 알려 주는 작은 화살표 (발밑)
+      g.fillStyle = 'rgba(253,224,71,.85)';
+      g.beginPath();
+      const ay = cy + 23, ax = cx + face * 12;
+      g.moveTo(ax + face * 7, ay); g.lineTo(ax - face * 3, ay - 5); g.lineTo(ax - face * 3, ay + 5); g.closePath(); g.fill();
     }
     function label(text, x, y, color) {
       g.font = '700 15px Fredoka, sans-serif';
@@ -363,7 +400,7 @@ export default {
         }
         if (m.angry && !frozen) { g.fillStyle = 'rgba(239,68,68,.35)'; g.beginPath(); g.arc(cx, cy, 24, 0, 7); g.fill(); }
         if (frozen) { g.fillStyle = 'rgba(186,230,253,.45)'; g.beginPath(); g.roundRect(m.x - 4, m.y - 2, m.w + 8, m.h + 6, 8); g.fill(); }
-        emoji(m.face, cx, cy, 34, m.vx > 0);
+        emoji(m.face, cx, cy, 34);
         if (m.word) label(m.word.en, cx, m.y - 12, glow && m.word === target ? '#fde047' : m.angry ? '#fecaca' : '#fff');
       }
       for (const it of items) {
@@ -372,7 +409,7 @@ export default {
       }
       if (!me.inv || Math.floor(me.inv * 10) % 2) {
         if (buff.shoe) { g.fillStyle = 'rgba(253,224,71,.3)'; g.beginPath(); g.ellipse(me.x + me.w / 2, me.y + me.h, 22, 6, 0, 0, 7); g.fill(); }
-        emoji('🐳', me.x + me.w / 2, me.y + me.h / 2, 40, me.face < 0);
+        drawHero(me.x + me.w / 2, me.y + me.h / 2, me.face);
       }
       for (const p of fx) { g.globalAlpha = Math.max(0, 1 - p.t); emoji(p.e, p.x, p.y, 28); g.globalAlpha = 1; }
       g.restore();
