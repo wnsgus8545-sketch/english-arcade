@@ -1,0 +1,38 @@
+{
+  "rules": {
+    "teachers": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'"
+      }
+    },
+    "classes": {
+      "$code": {
+        ".read": "auth != null",
+        "meta": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (!data.exists() || data.child('owner').val() === auth.uid)",
+          ".validate": "newData.child('owner').val() === auth.uid && newData.child('name').isString()"
+        },
+        "words": {
+          ".write": "root.child('classes').child($code).child('meta/owner').val() === auth.uid"
+        },
+        "event": {
+          ".write": "root.child('classes').child($code).child('meta/owner').val() === auth.uid"
+        },
+        "players": {
+          "$num": {
+            ".write": "auth != null && root.child('classes').child($code).child('meta').exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && (!newData.exists() || newData.child('uid').val() === auth.uid)) || root.child('classes').child($code).child('meta/owner').val() === auth.uid)",
+            ".validate": "$num.matches(/^[0-9]{1,2}$/) && newData.hasChildren(['uid', 'name', 'score']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('score').isNumber()"
+          }
+        },
+        "feed": {
+          ".write": "root.child('classes').child($code).child('meta/owner').val() === auth.uid",
+          "$id": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.hasChildren(['name', 'score', 'ts']) && newData.child('score').isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
