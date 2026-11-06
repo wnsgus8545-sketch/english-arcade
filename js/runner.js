@@ -1,12 +1,13 @@
 // 게임 한 판을 돌리는 틀 — 타이머 · 점수/콤보 · 아이템 · 결과 화면
 import * as S from './store.js';
-import { ITEMS } from './items.js';
+import { ITEMS, GENERIC_ITEMS, QUICK_ITEMS } from './items.js';
 import { h, esc, sleep, countUp } from './util.js';
 import { sfx } from './sfx.js';
 import { toast, floatText, shake, bump, confetti, burst } from './fx.js';
 
-export function runGame(game, { root, words, getEvent, onExit }) {
-  const st = { score: 0, correct: 0, wrong: 0, combo: 0, maxCombo: 0, writing: 0, doubleUntil: 0, shield: false, started: false, ended: false };
+export function runGame(game, { root, words, getEvent, onExit, onShop }) {
+  const st = { score: 0, correct: 0, wrong: 0, combo: 0, maxCombo: 0, writing: 0, doubleUntil: 0, goldUntil: 0, shield: false, started: false, ended: false };
+  const supports = (id) => GENERIC_ITEMS.includes(id) || game.items.includes(id);
   const el = h(`<div class="game" style="--c:${game.color}">
     <header class="g-top">
       <button class="btn ghost g-quit">✕ 그만</button>
@@ -25,8 +26,8 @@ export function runGame(game, { root, words, getEvent, onExit }) {
   // ── 아이템 버튼 (한 번 만들고 숫자만 바꾼다) ──
   const itemBtns = {};
   for (const [id, it] of Object.entries(ITEMS)) {
-    const ok = game.items.includes(id);
-    const b = h(`<button class="item ${ok ? '' : 'na'}" title="${esc(it.desc)}"><span class="ie">${it.emoji}</span><span class="in">${esc(it.short)}</span><b class="ic">0</b></button>`);
+    const ok = supports(id);
+    const b = h(`<button class="item ${ok ? '' : 'na'} ${it.hot ? 'hot' : ''}" title="${esc(it.desc)}"><span class="ie">${it.emoji}</span><span class="in">${esc(it.short)}</span><b class="ic">0</b></button>`);
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); useItem(id, b); }); // click 보다 빠르게 반응
     itembar.append(b);
     itemBtns[id] = b;
@@ -75,6 +76,7 @@ export function runGame(game, { root, words, getEvent, onExit }) {
     if (writing) st.writing++;
     let m = comboMult();
     if (performance.now() < st.doubleUntil) m *= 2;
+    if (performance.now() < st.goldUntil) m *= 3;
     if (eventOn()) m *= 2;
     if (writing) m *= 2;
     const pts = Math.round(base * m);
@@ -104,6 +106,17 @@ export function runGame(game, { root, words, getEvent, onExit }) {
     renderBadges(true);
     return false;
   }
+  /** 감점 — 이번 판 점수는 0 아래로 내려가지 않는다 */
+  function penalty(n, at) {
+    if (st.ended) return 0;
+    const cut = Math.min(n, st.score);
+    if (!cut) return 0;
+    st.score -= cut;
+    S.addPoints(-cut);
+    scoreEl.textContent = st.score.toLocaleString();
+    floatText(at || scoreEl, `−${cut}`, 'minus');
+    return cut;
+  }
   function comboPop() {
     sfx.combo();
     const c = h(`<div class="combo-pop">🔥 ${st.combo} COMBO! <small>×${comboMult().toFixed(1)}</small></div>`);
@@ -113,28 +126,33 @@ export function runGame(game, { root, words, getEvent, onExit }) {
   let badgeKey = '';
   function renderBadges(force) {
     const dbl = Math.max(0, Math.ceil((st.doubleUntil - performance.now()) / 1000));
+    const gold = Math.max(0, Math.ceil((st.goldUntil - performance.now()) / 1000));
     const ev = eventOn();
-    const key = `${st.combo}|${dbl}|${st.shield}|${ev}|${timer.rate}`;
+    const key = `${st.combo}|${dbl}|${gold}|${st.shield}|${ev}|${timer.rate}`;
     if (!force && key === badgeKey) return;
     badgeKey = key;
     const out = [];
     if (st.combo >= 2) out.push(`<span class="badge combo">🔥 ${st.combo}콤보 ×${comboMult().toFixed(1)}</span>`);
+    if (gold) out.push(`<span class="badge gold">🌟 황금 3배 ${gold}초</span>`);
     if (dbl) out.push(`<span class="badge dbl">✨ 2배 ${dbl}초</span>`);
     if (ev) out.push(`<span class="badge ev">⚡ 선생님 2배 타임</span>`);
     if (st.shield) out.push(`<span class="badge shield">🛡️ 방패 ON</span>`);
     if (timer.rate < 1) out.push(`<span class="badge slow">⏳ 쓰기 중 · 시간 천천히</span>`);
     badges.innerHTML = out.join('');
     el.classList.toggle('doubled', !!dbl || ev);
+    el.classList.toggle('golden', !!gold);
   }
 
   // ── 아이템 사용 — 서버를 기다리지 않는다 ──
   function useItem(id, btn) {
     if (st.ended || !st.started) return;
-    if (!game.items.includes(id)) { toast('이 게임에선 못 쓰는 아이템이에요'); return; }
-    if (!S.useItem(id)) { toast('아이템이 없어요 · 대기실 🛒상점에서 살 수 있어요'); shake(btn); return; }
+    if (!supports(id)) { toast('이 게임에선 못 쓰는 아이템이에요'); return; }
+    if (!S.useItem(id)) { toast('아이템이 없어요 · 판이 끝나면 결과 화면에서 바로 살 수 있어요'); shake(btn); return; }
     let ok = true, msg = '지금은 쓸 수 없어요';
     if (id === 'time') timer.add(10);
     else if (id === 'double') st.doubleUntil = Math.max(performance.now(), st.doubleUntil) + 20000;
+    else if (id === 'gold') { st.goldUntil = Math.max(performance.now(), st.goldUntil) + 15000; floatText(scoreEl, '🌟 ×3', 'w'); }
+    else if (id === 'combo') { st.combo += 10; st.maxCombo = Math.max(st.maxCombo, st.combo); comboPop(); }
     else if (id === 'shield') { if (st.shield) { ok = false; msg = '방패는 이미 켜져 있어요'; } else st.shield = true; }
     else ok = ctx.activeWrite ? ctx.activeWrite.item(id) : !!inst?.onItem?.(id);
     if (!ok) { S.refundItem(id); toast(msg); updateItems(); return; }
@@ -147,7 +165,7 @@ export function runGame(game, { root, words, getEvent, onExit }) {
 
   // ── 게임에 넘겨주는 도구 ──
   const ctx = {
-    stage, words, timer, award, miss, st,
+    stage, words, timer, award, miss, penalty, st,
     end: (r) => end(r),
     onTick(f) { tickers.add(f); return () => tickers.delete(f); },
     get ended() { return st.ended; },
@@ -169,6 +187,8 @@ export function runGame(game, { root, words, getEvent, onExit }) {
   }
 
   function showResult(reason, coins, best) {
+    const tries = st.correct + st.wrong;
+    const acc = tries ? Math.round((st.correct / tries) * 100) : 0;
     const r = h(`<div class="result-wrap"><div class="result pop-in">
       <div class="r-reason">${esc(reason)}</div>
       <div class="r-emoji">${game.emoji}</div>
@@ -176,15 +196,37 @@ export function runGame(game, { root, words, getEvent, onExit }) {
       <div class="r-score" data-v="0">0</div><div class="r-unit">점</div>
       <div class="r-grid">
         <div><b>${st.correct}</b><small>맞힘</small></div>
-        <div><b>${st.maxCombo}</b><small>최고 콤보</small></div>
+        <div class="${acc < 70 ? 'low' : ''}"><b>${acc}%</b><small>정확도</small></div>
         <div class="w"><b>${st.writing}</b><small>✍️ 쓰기 성공</small></div>
         <div class="c"><b>+${coins}</b><small>🪙 코인</small></div>
+      </div>
+      <div class="quick">
+        <div class="quick-h">⚡ 다음 판 준비 <span>내 코인 🪙 <b class="qc">${S.me.data.coins}</b></span></div>
+        <div class="quick-row">${QUICK_ITEMS.map((id) => `<button class="qbuy" data-id="${id}"><span>${ITEMS[id].emoji}</span><b>${esc(ITEMS[id].name)}</b><small>가진 것 <i data-own="${id}">${S.me.data.items[id] || 0}</i></small><em>🪙 ${ITEMS[id].price}</em></button>`).join('')}</div>
+        <button class="btn ghost more-shop">🛒 상점 · 🎁 행운 상자 · 꾸미기</button>
       </div>
       <div class="r-btns"><button class="btn big primary again">🔁 한 판 더</button><button class="btn big ghost back">🏠 대기실로</button></div>
     </div></div>`);
     el.append(r);
     countUp(r.querySelector('.r-score'), st.score, 900);
     if (st.score > 0) { sfx.win(); if (best) confetti(); }
+    const refresh = () => {
+      r.querySelector('.qc').textContent = S.me.data.coins;
+      r.querySelectorAll('.qbuy').forEach((b) => {
+        const id = b.dataset.id;
+        b.querySelector('[data-own]').textContent = S.me.data.items[id] || 0;
+        b.classList.toggle('poor', S.me.data.coins < ITEMS[id].price);
+      });
+    };
+    refresh();
+    r.querySelectorAll('.qbuy').forEach((b) => b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const id = b.dataset.id;
+      if (S.buy(id, ITEMS[id].price)) { sfx.coin(); burst(b, 12); b.classList.remove('used'); void b.offsetWidth; b.classList.add('used'); }
+      else { shake(b); toast('코인이 부족해요'); }
+      refresh();
+    }));
+    r.querySelector('.more-shop').onclick = () => onShop?.(refresh);
     r.querySelector('.again').onclick = () => onExit(true);
     r.querySelector('.back').onclick = () => onExit(false);
   }

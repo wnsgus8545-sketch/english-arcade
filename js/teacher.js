@@ -1,7 +1,8 @@
 // 선생님 화면 — 반 만들기 · 단어 넣기 · 실시간 순위 · 2배 타임 · 점수 초기화
 import * as S from './store.js';
 import { DEFAULT_WORDS } from './words.js';
-import { h, esc, avatar } from './util.js';
+import { h, esc } from './util.js';
+import { avaOf, nameHtml } from './look.js';
 import { toast } from './fx.js';
 
 const app = document.getElementById('app');
@@ -168,7 +169,7 @@ async function openClass(code) {
     players = p;
     const sorted = [...p].sort((a, b) => b.score - a.score || a.num - b.num);
     pc.textContent = `${p.length}명`;
-    tbody.innerHTML = sorted.map((s, i) => `<tr><td>${i + 1}</td><td class="n">${s.num}</td><td>${avatar(s.num)} ${esc(s.name)}</td><td class="n">${(s.score || 0).toLocaleString()}</td><td>${s.coins || 0}</td><td>${s.plays || 0}</td>
+    tbody.innerHTML = sorted.map((s, i) => `<tr><td>${i + 1}</td><td class="n">${s.num}</td><td>${avaOf(s)} ${nameHtml(s)}</td><td class="n">${(s.score || 0).toLocaleString()}</td><td>${s.coins || 0}</td><td>${s.plays || 0}</td>
       <td style="white-space:nowrap"><button class="btn mini gift" data-n="${s.num}" title="코인 30개 주기">🪙+30</button> <button class="btn mini warn kick" data-n="${s.num}">자리 비우기</button></td></tr>`).join('')
       || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">아직 들어온 학생이 없어요</td></tr>';
     tbody.querySelectorAll('.kick').forEach((b) => (b.onclick = async () => { if (confirm(`${b.dataset.n}번 자리를 비울까요?`)) { await S.removePlayer(code, b.dataset.n); toast('자리를 비웠어요'); } }));
@@ -194,5 +195,5 @@ function renderProjector() {
   const ol = document.querySelector('.projector .board');
   if (!ol) return;
   const sorted = [...players].sort((a, b) => b.score - a.score || a.num - b.num);
-  ol.innerHTML = sorted.map((s, i) => `<li class="${i < 3 ? 'top' + (i + 1) : ''}"><span class="rk">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="ava">${avatar(s.num)}</span><span class="nm">${esc(s.name)}</span><b class="sc">${(s.score || 0).toLocaleString()}</b></li>`).join('');
+  ol.innerHTML = sorted.map((s, i) => `<li class="${i < 3 ? 'top' + (i + 1) : ''}"><span class="rk">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="ava">${avaOf(s)}</span><span class="nm">${nameHtml(s)}</span><b class="sc">${(s.score || 0).toLocaleString()}</b></li>`).join('');
 }

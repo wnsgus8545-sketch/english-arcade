@@ -1,11 +1,12 @@
 // 학생 화면 — 입장 · 대기실(게임 고르기·순위·소식) · 상점
 import * as S from './store.js';
 import { GAMES } from './games/index.js';
-import { ITEMS } from './items.js';
+import { ITEMS, COSMETICS, LUCKY_PRICE } from './items.js';
 import { DEFAULT_WORDS } from './words.js';
-import { h, esc, avatar, countUp } from './util.js';
+import { h, esc, countUp, pick, sleep } from './util.js';
+import { avaOf, nameHtml } from './look.js';
 import { sfx } from './sfx.js';
-import { toast, burst, shake } from './fx.js';
+import { toast, burst, shake, confetti } from './fx.js';
 import { runGame } from './runner.js';
 
 const app = document.getElementById('app');
@@ -94,7 +95,7 @@ function showHub() {
   const me = S.me;
   const v = h(`<div class="hub">
     <header class="topbar">
-      <div class="me-box"><span class="ava">${avatar(me.num)}</span><div><b class="me-name">${esc(me.data.name)}</b><small>${esc(me.className || me.code)} · ${me.num}번</small></div></div>
+      <div class="me-box"><span class="ava"></span><div><b class="me-name"></b><small>${esc(me.className || me.code)} · ${me.num}번</small></div></div>
       <div class="stats">
         <div class="stat score"><small>총점</small><b id="meScore">0</b></div>
         <div class="stat coin"><small>🪙 코인</small><b id="meCoins">0</b></div>
@@ -154,6 +155,18 @@ function renderMe(d) {
   if (co) countUp(co, d.coins);
   const inv = app.querySelector('.inv');
   if (inv) inv.innerHTML = '<span>내 아이템</span>' + Object.entries(ITEMS).map(([id, it]) => `<b class="${d.items[id] ? '' : 'zero'}">${it.emoji} ${d.items[id] || 0}</b>`).join('') + '<em>＋ 사러 가기</em>';
+  const me = { ...d, num: S.me.num };
+  const ava = app.querySelector('.me-box .ava'), nm = app.querySelector('.me-box .me-name');
+  if (ava) ava.textContent = avaOf(me);
+  if (nm) nm.innerHTML = nameHtml(me);
+  // 살 수 있는 게 생기면 상점 버튼이 반짝인다
+  const sb = app.querySelector('.shop-btn');
+  if (sb) {
+    const cheapCos = Math.min(...Object.entries(COSMETICS).flatMap(([k, g]) => Object.entries(g.list).filter(([id]) => !S.ownsCos(k, id)).map(([, c]) => c.price)));
+    const can = d.coins >= LUCKY_PRICE;
+    sb.classList.toggle('glow', can);
+    sb.innerHTML = can ? `🛒 상점 <span class="sb-tip">${d.coins >= cheapCos ? '꾸미기 살 수 있어요!' : '🎁 행운 상자!'}</span>` : '🛒 상점';
+  }
   if (!game) app.querySelectorAll('.gcard').forEach((b) => { const v = b.querySelector('.gbest b'); if (v) v.textContent = (d.best[b.dataset.id] || 0).toLocaleString(); });
 }
 
@@ -166,7 +179,7 @@ function renderBoard() {
   const lis = sorted.map((p, i) => {
     let li = ol.querySelector(`li[data-k="${p.num}"]`) || h(`<li data-k="${p.num}"></li>`);
     li.className = (p.num === S.me.num ? 'me ' : '') + (i < 3 ? 'top' + (i + 1) : '');
-    li.innerHTML = `<span class="rk">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="ava">${avatar(p.num)}</span><span class="nm">${esc(p.name)}</span><b class="sc">${(p.score || 0).toLocaleString()}</b>`;
+    li.innerHTML = `<span class="rk">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="ava">${avaOf(p)}</span><span class="nm">${nameHtml(p)}</span><b class="sc">${(p.score || 0).toLocaleString()}</b>`;
     return li;
   });
   ol.replaceChildren(...lis);
@@ -186,7 +199,9 @@ function renderFeed() {
   const ul = app.querySelector('.feed');
   if (!ul) return;
   ul.innerHTML = feed.length
-    ? feed.map((f) => `<li><span class="fe">${f.emoji || '🎮'}</span><span><b>${esc(f.name)}</b> ${esc(f.game)} <b class="fs">${(+f.score).toLocaleString()}점</b>${f.best ? ' 🏆' : ''}</span><small>${ago(f.ts)}</small></li>`).join('')
+    ? feed.map((f) => f.kind === 'lucky'
+      ? `<li class="lucky"><span class="fe">🎁</span><span><b>${esc(f.name)}</b> 행운 상자에서 <b class="fs">${esc(f.game)}</b> 뽑음!</span><small>${ago(f.ts)}</small></li>`
+      : `<li><span class="fe">${f.emoji || '🎮'}</span><span><b>${esc(f.name)}</b> ${esc(f.game)} <b class="fs">${(+f.score).toLocaleString()}점</b>${f.best ? ' 🏆' : ''}</span><small>${ago(f.ts)}</small></li>`).join('')
     : '<li class="empty">첫 기록의 주인공이 되어 보세요!</li>';
 }
 
@@ -208,6 +223,7 @@ function playGame(g) {
   document.body.classList.add('in-game');
   game = runGame(g, {
     root: holder, words, getEvent,
+    onShop: (after) => openShop(after),
     onExit(again) {
       game?.destroy();
       holder.remove();
@@ -220,33 +236,125 @@ function playGame(g) {
 }
 
 // ── 상점 ─────────────────────────────────────────────
-function openShop() {
+// 행운 상자 — 무엇이 나올지 모른다 (꾸미기는 갖고 있지 않은 것만 나온다)
+function rollLucky() {
+  const unowned = (rare) => Object.entries(COSMETICS).flatMap(([k, g]) =>
+    Object.entries(g.list).filter(([id, c]) => !!c.rare === rare && !S.ownsCos(k, id)).map(([id, c]) => ({ k, id, c })));
+  const r = Math.random();
+  if (r < 0.05) { const l = unowned(true); if (l.length) return { type: 'cos', ...pick(l), rare: true }; }
+  if (r < 0.2) { const l = unowned(false); if (l.length) return { type: 'cos', ...pick(l) }; }
+  if (r < 0.25) return { type: 'coins', n: 150, jackpot: true };
+  if (r < 0.55) return { type: 'coins', n: 15 + Math.floor(Math.random() * 12) * 5 };
+  const pool = ['gold', 'gold', 'combo', 'combo', 'double', 'double', 'time', 'shield', 'hint', 'skip'];
+  const n = 2 + (Math.random() < 0.4 ? 1 : 0);
+  return { type: 'items', list: Array.from({ length: n }, () => pick(pool)) };
+}
+
+function openShop(after) {
   sfx.click();
   const m = h(`<div class="modal"><div class="sheet pop-in">
-    <header><h2>🛒 아이템 상점</h2><div class="coins">🪙 <b>0</b></div><button class="btn ghost icon x">✕</button></header>
-    <div class="shop-grid">${Object.entries(ITEMS).map(([id, it]) => `<div class="shop-item">
-      <div class="si-e">${it.emoji}</div><b>${esc(it.name)}</b><p>${esc(it.desc)}</p>
-      <div class="si-own">가진 개수 <b data-own="${id}">0</b></div>
-      <button class="btn primary buy" data-id="${id}">🪙 ${it.price}</button></div>`).join('')}</div>
-    <p class="shop-tip">💡 게임 화면 아래 아이템 버튼을 누르면 <b>그 자리에서 바로</b> 적용돼요. 코인은 게임 점수 5점마다 1개씩 쌓여요.</p>
+    <header><h2>🛒 상점</h2><div class="coins">🪙 <b>0</b></div><button class="btn ghost icon x">✕</button></header>
+    <nav class="tabs"><button data-t="items" class="on">⚔️ 게임 아이템</button><button data-t="lucky">🎁 행운 상자</button><button data-t="cos">✨ 꾸미기</button></nav>
+    <section data-p="items">
+      <div class="shop-grid">${Object.entries(ITEMS).map(([id, it]) => `<div class="shop-item ${it.hot ? 'hot' : ''}">
+        ${it.hot ? '<span class="ribbon">NEW</span>' : ''}
+        <div class="si-e">${it.emoji}</div><b>${esc(it.name)}</b><p>${esc(it.desc)}</p>
+        <div class="si-own">가진 개수 <b data-own="${id}">0</b></div>
+        <button class="btn primary buy" data-id="${id}">🪙 ${it.price}</button></div>`).join('')}</div>
+      <p class="shop-tip">💡 판이 끝나면 결과 화면에서도 바로 살 수 있어요. 🌟황금 + 🔥콤보를 같이 쓰면 점수가 폭발해요!</p>
+    </section>
+    <section data-p="lucky" class="hidden">
+      <div class="lucky-box">
+        <div class="lb-gift">🎁</div>
+        <div class="lb-odds">아이템 2~3개 · 코인 · <b>꾸미기</b> · ✨희귀 꾸미기 · 💰잭팟 150코인</div>
+        <button class="btn big primary open-lucky">🎁 열기 · 🪙 ${LUCKY_PRICE}</button>
+        <div class="lb-result"></div>
+      </div>
+    </section>
+    <section data-p="cos" class="hidden">
+      <div class="cos-preview"></div>
+      ${Object.entries(COSMETICS).map(([k, g]) => `<h3 class="cos-h">${g.label}</h3><div class="cos-grid">${Object.entries(g.list).map(([id, c]) => `
+        <button class="cos-item ${c.rare ? 'rare' : ''}" data-k="${k}" data-id="${id}">
+          <div class="ci-v">${k === 'avatar' ? c.v : k === 'fx' ? `<span class="pname ${c.v}">이름</span>` : `<small class="ptitle">${esc(c.v)}</small>`}</div>
+          <b>${esc(c.name)}</b><em></em></button>`).join('')}</div>`).join('')}
+      <p class="shop-tip">꾸미기는 한 번 사면 계속 내 것이에요. <b>순위표와 TV 화면</b>에 그대로 보여요. 산 것을 다시 누르면 끼웠다 뺐다 해요.</p>
+    </section>
   </div></div>`);
   document.body.append(m);
+  const tabs = m.querySelectorAll('.tabs button');
+  tabs.forEach((t) => (t.onclick = () => {
+    sfx.click();
+    tabs.forEach((x) => x.classList.toggle('on', x === t));
+    m.querySelectorAll('section[data-p]').forEach((p) => p.classList.toggle('hidden', p.dataset.p !== t.dataset.t));
+  }));
+
   const upd = (d) => {
     countUp(m.querySelector('.coins b'), d.coins, 300);
     for (const [id, it] of Object.entries(ITEMS)) {
       m.querySelector(`[data-own="${id}"]`).textContent = d.items[id] || 0;
       m.querySelector(`.buy[data-id="${id}"]`).classList.toggle('poor', d.coins < it.price);
     }
+    m.querySelector('.open-lucky').classList.toggle('poor', d.coins < LUCKY_PRICE);
+    m.querySelectorAll('.cos-item').forEach((b) => {
+      const { k, id } = b.dataset, c = COSMETICS[k].list[id];
+      const own = S.ownsCos(k, id), on = d.cos[k] === id;
+      b.classList.toggle('own', own);
+      b.classList.toggle('on', on);
+      b.classList.toggle('poor', !own && d.coins < c.price);
+      b.querySelector('em').textContent = on ? '✅ 끼는 중' : own ? '끼기' : `🪙 ${c.price}`;
+    });
+    m.querySelector('.cos-preview').innerHTML = `<span class="ava">${avaOf({ ...d, num: S.me.num })}</span><span class="nm">${nameHtml(d)}</span><small>순위표에 이렇게 보여요</small>`;
   };
   const off = S.onMe(upd);
-  const close = () => { off(); m.remove(); };
+  const close = () => { off(); m.remove(); if (typeof after === 'function') after(); };
   m.addEventListener('pointerdown', (e) => { if (e.target === m) close(); });
   m.querySelector('.x').onclick = close;
+
   m.querySelectorAll('.buy').forEach((b) => (b.onclick = () => {
     const id = b.dataset.id;
     if (S.buy(id, ITEMS[id].price)) { sfx.coin(); burst(b, 12); toast(`${ITEMS[id].emoji} ${ITEMS[id].name} 샀어요!`, 'good'); }
     else { shake(b); toast('코인이 부족해요. 게임을 해서 모아 보세요!'); }
   }));
+
+  m.querySelectorAll('.cos-item').forEach((b) => (b.onclick = () => {
+    const { k, id } = b.dataset, c = COSMETICS[k].list[id];
+    if (S.ownsCos(k, id)) { S.equipCos(k, id); sfx.click(); return; }
+    if (S.buyCos(k, id, c.price)) { sfx.win(); burst(b, 20); toast(`✨ ${c.name} 획득! 바로 꼈어요`, 'good'); }
+    else { shake(b); toast(`코인이 ${c.price - S.me.data.coins}개 더 필요해요`); }
+  }));
+
+  let opening = false;
+  const lb = m.querySelector('.lucky-box'), res = m.querySelector('.lb-result');
+  m.querySelector('.open-lucky').onclick = async (e) => {
+    if (opening) return;
+    if (!S.spend(LUCKY_PRICE)) { shake(e.currentTarget); toast('코인이 부족해요'); return; }
+    opening = true;
+    res.innerHTML = '';
+    lb.classList.add('shaking');
+    for (let i = 0; i < 5; i++) { sfx.tick(); await sleep(200); }
+    lb.classList.remove('shaking');
+    const p = rollLucky();
+    let html = '', big = false;
+    if (p.type === 'cos') {
+      S.grantCos(p.k, p.id); S.equipCos(p.k, p.id);
+      const shown = p.k === 'avatar' ? p.c.v : p.k === 'fx' ? `<span class="pname ${p.c.v}">${esc(S.me.data.name)}</span>` : `<small class="ptitle">${esc(p.c.v)}</small>`;
+      html = `<div class="lb-prize ${p.rare ? 'rare' : ''}"><div class="lp-v">${shown}</div><b>${p.rare ? '✨ 희귀! ' : ''}${esc(p.c.name)}</b><small>꾸미기 획득 · 바로 꼈어요</small></div>`;
+      big = true;
+      S.pushFeed({ kind: 'lucky', name: S.me.data.name, num: S.me.num, game: `${p.rare ? '✨희귀 ' : ''}${p.c.name}`, score: 0 });
+    } else if (p.type === 'coins') {
+      S.addCoins(p.n);
+      html = `<div class="lb-prize ${p.jackpot ? 'rare' : ''}"><div class="lp-v">${p.jackpot ? '💰' : '🪙'}</div><b>${p.jackpot ? '잭팟! ' : ''}코인 ${p.n}개</b></div>`;
+      big = !!p.jackpot;
+      if (p.jackpot) S.pushFeed({ kind: 'lucky', name: S.me.data.name, num: S.me.num, game: '💰 잭팟 150코인', score: 0 });
+    } else {
+      p.list.forEach((id) => S.giveItem(id));
+      html = `<div class="lb-prize"><div class="lp-v">${p.list.map((id) => ITEMS[id].emoji).join(' ')}</div><b>${p.list.map((id) => ITEMS[id].name).join(' · ')}</b><small>아이템 ${p.list.length}개 획득</small></div>`;
+    }
+    res.innerHTML = html;
+    big ? (sfx.win(), confetti(90)) : sfx.coin();
+    burst(res, 18);
+    opening = false;
+  };
 }
 
 function logout(save = true) {

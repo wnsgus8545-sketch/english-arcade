@@ -10,7 +10,8 @@ import { DEFAULT_WORDS } from './words.js';
 import { STARTER_ITEMS, STARTER_COINS } from './items.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-export const ONLINE = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.databaseURL);
+// 주소 끝에 ?demo 를 붙이면 Firebase 없이 이 브라우저 안에서만 돌아가는 체험 모드
+export const ONLINE = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.databaseURL) && !new URLSearchParams(location.search).has('demo');
 
 let F = null, db = null, auth = null, offset = 0;
 export const now = () => Date.now() + offset;
@@ -94,6 +95,7 @@ let flushT = 0;
 
 const blank = () => ({
   uid: uid(), name: '', score: 0, coins: STARTER_COINS, items: { ...STARTER_ITEMS }, best: {}, plays: 0, updatedAt: 0,
+  cos: { owned: {}, avatar: '', fx: '', title: '' },
 });
 
 export async function join(code, num, name) {
@@ -112,6 +114,8 @@ export async function join(code, num, name) {
   const data = { ...blank(), ...(cur || {}), name, uid: uid() };
   data.items = { ...(cur ? {} : STARTER_ITEMS), ...(data.items || {}) };
   data.best = data.best || {};
+  data.cos = { avatar: '', fx: '', title: '', ...(data.cos || {}) };
+  data.cos.owned = data.cos.owned || {};
   await set(path, data); // 처음 한 번만 기다린다 (자리 확보)
   Object.assign(me, { code, num, data, className: meta.name });
   localStorage.setItem('ea_session', JSON.stringify({ code, num, name }));
@@ -135,14 +139,32 @@ function changed() {
 export function flush() {
   clearTimeout(flushT);
   if (!me.code || !me.data) return;
-  const { uid: u, name, score, coins, items, best, plays } = me.data;
-  update(`classes/${me.code}/players/${me.num}`, { uid: u, name, score, coins, items, best, plays, updatedAt: Date.now() })
+  const { uid: u, name, score, coins, items, best, plays, cos } = me.data;
+  update(`classes/${me.code}/players/${me.num}`, { uid: u, name, score, coins, items, best, plays, cos, updatedAt: Date.now() })
     .catch((e) => console.warn('저장 실패(잠시 뒤 다시 보냄)', e));
 }
 addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => document.hidden && flush());
 
-export function addPoints(p) { me.data.score += p; changed(); }
+export function addPoints(p) { me.data.score = Math.max(0, me.data.score + p); changed(); }
+export function spend(n) { if (me.data.coins < n) return false; me.data.coins -= n; changed(); return true; }
+export function giveItem(id, n = 1) { me.data.items[id] = (me.data.items[id] || 0) + n; changed(); }
+const cosKey = (kind, id) => `${kind}_${id}`;
+export const ownsCos = (kind, id) => !!me.data.cos.owned[cosKey(kind, id)];
+export function grantCos(kind, id) { me.data.cos.owned[cosKey(kind, id)] = true; changed(); }
+export function buyCos(kind, id, price) {
+  if (ownsCos(kind, id) || me.data.coins < price) return false;
+  me.data.coins -= price;
+  grantCos(kind, id);
+  equipCos(kind, id);
+  return true;
+}
+/** 장착 — 이미 장착한 것을 다시 누르면 벗는다 */
+export function equipCos(kind, id) {
+  if (!ownsCos(kind, id)) return;
+  me.data.cos[kind] = me.data.cos[kind] === id ? '' : id;
+  changed();
+}
 export function addCoins(c) { me.data.coins += c; changed(); }
 export function useItem(id) {
   if ((me.data.items[id] || 0) <= 0) return false;
