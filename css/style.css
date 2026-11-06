@@ -701,7 +701,21 @@ b { font-weight: 800; }
 .bb-prompt b { display: block; font: 2rem var(--fun); font-weight: 400; }
 .bb-lives { font-size: 1.3rem; letter-spacing: 3px; }
 .bb-lives .lost { opacity: .4; }
+.bb-wrap { position: relative; flex: 1; width: 100%; min-height: 260px; display: flex; }
 .bb-cv { flex: 1; width: 100%; min-height: 260px; touch-action: none; }
+.bb-stage { display: grid; justify-items: center; gap: 1px; padding: 6px 12px; border-radius: 14px; background: rgba(0, 0, 0, .3); }
+.bb-stage b { font: 700 1.05rem var(--en); color: var(--yellow); }
+.bb-stage small { font-size: .72rem; color: var(--muted); }
+.bb-stage i { font-style: normal; letter-spacing: 2px; color: #7dd3fc; }
+.bb-side { display: grid; gap: 4px; justify-items: center; }
+.bb-buffs { display: flex; gap: 6px; min-height: 1.4em; font-weight: 800; font-size: .9rem; }
+.bb-buffs span { background: rgba(255, 255, 255, .15); padding: 1px 7px; border-radius: 999px; animation: popIn .25s both; }
+.bb-banner { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; z-index: 5; pointer-events: none;
+  background: rgba(10, 6, 30, .5); border-radius: 18px; font: 1.6rem var(--fun); animation: popIn .35s cubic-bezier(.2, 1.4, .4, 1) both; }
+.bb-banner b { font: 700 3rem var(--en); color: var(--yellow); text-shadow: 0 5px 0 #92400e, 0 0 30px rgba(255, 210, 63, .7); }
+.bb-banner small { font: 600 1rem var(--body); color: #e0f2fe; }
+.floaty.b { color: #7dd3fc; text-shadow: 0 3px 0 #0369a1, 0 0 14px rgba(125, 211, 252, .8); font-size: 1.4rem; }
+@media (max-width: 640px) { .bb-stage small, .bb-help { display: none; } .bb-prompt b { font-size: 1.5rem; } }
 .bb-pad { display: none; width: min(560px, 100%); gap: 8px; align-items: center; }
 .bb-pad span { flex: 1; }
 .bb-pad button { width: 64px; height: 56px; border-radius: 16px; background: #fff; color: var(--ink); font-size: 1.5rem; font-weight: 800; box-shadow: 0 4px 0 #7dd3fc; user-select: none; -webkit-user-select: none; }

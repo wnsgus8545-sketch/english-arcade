@@ -106,6 +106,21 @@ export function runGame(game, { root, words, getEvent, onExit, onShop }) {
     renderBadges(true);
     return false;
   }
+  /** 보너스 점수 — 아이템·연쇄 같은 덤. 콤보·정확도에는 들어가지 않는다 (2배·황금 효과만 적용) */
+  function bonus(base, at, label = '') {
+    if (st.ended) return 0;
+    let m = 1;
+    if (performance.now() < st.doubleUntil) m *= 2;
+    if (performance.now() < st.goldUntil) m *= 3;
+    if (eventOn()) m *= 2;
+    const pts = Math.round(base * m);
+    st.score += pts;
+    S.addPoints(pts);
+    scoreEl.textContent = st.score.toLocaleString();
+    bump(scoreEl);
+    floatText(at || scoreEl, `${label}+${pts}`, 'b');
+    return pts;
+  }
   /** 감점 — 이번 판 점수는 0 아래로 내려가지 않는다 */
   function penalty(n, at) {
     if (st.ended) return 0;
@@ -165,7 +180,7 @@ export function runGame(game, { root, words, getEvent, onExit, onShop }) {
 
   // ── 게임에 넘겨주는 도구 ──
   const ctx = {
-    stage, words, timer, award, miss, penalty, st,
+    stage, words, timer, award, miss, penalty, bonus, st,
     end: (r) => end(r),
     onTick(f) { tickers.add(f); return () => tickers.delete(f); },
     get ended() { return st.ended; },
