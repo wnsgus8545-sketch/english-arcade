@@ -8,7 +8,7 @@ const FREEZE_AFTER = 2; // 연속으로 이만큼 틀리면
 const FREEZE_MS = 1800; // 이 시간 동안 얼어붙는다
 
 export default {
-  id: 'ox', title: '스피드 O/X', emoji: '⚡', color: '#3b82f6', time: 45, isNew: true,
+  id: 'ox', title: '스피드 O/X', emoji: '⚡', color: '#3b82f6', time: 45,
   desc: '맞으면 O, 틀리면 X! 단, 틀리면 감점 −8점, 연속으로 찍으면 얼음 🧊',
   tags: ['⚡ 순발력', '⚠️ 오답 감점'],
   items: ['time', 'double', 'shield', 'skip'],

@@ -3,7 +3,7 @@ import { bump } from '../fx.js';
 import { writePrompt } from '../write.js';
 
 export default {
-  id: 'mole', title: '단어 두더지', emoji: '🔨', color: '#f97316', time: 60, isNew: true,
+  id: 'mole', title: '단어 두더지', emoji: '🔨', color: '#f97316', time: 60,
   desc: '뜻에 맞는 영어 두더지를 뿅! 🌟황금 두더지가 나오면 쓰기 찬스.',
   tags: ['✍️ 쓰기 섞임'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],

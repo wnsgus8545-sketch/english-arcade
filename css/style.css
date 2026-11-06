@@ -556,6 +556,86 @@ b { font-weight: 800; }
 .ox-ice b { font: 2.2rem var(--fun); color: #0c4a6e; }
 .ox-ice small { font-size: 1rem; color: #0c4a6e; font-weight: 700; }
 
+/* 🧸 인형뽑기 */
+.claw { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px; transition: filter .2s; }
+.cl-prompt, .rc-prompt, .sh-prompt { text-align: center; background: #fff; color: var(--ink); padding: 8px 26px; border-radius: 20px; box-shadow: 0 7px 0 color-mix(in srgb, var(--c) 70%, #000); }
+.cl-prompt small, .rc-prompt small, .sh-prompt small { color: #64748b; font-weight: 700; font-size: .8rem; }
+.cl-prompt b, .rc-prompt b, .sh-prompt b { display: block; font: 2rem var(--fun); font-weight: 400; }
+.cl-machine { position: relative; flex: 1; width: min(640px, 100%); min-height: 260px; border-radius: 26px 26px 14px 14px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(168, 85, 247, .25)); border: 6px solid #f0abfc; box-shadow: 0 0 0 6px #a855f7, 0 0 40px rgba(168, 85, 247, .5); }
+.cl-rail { position: absolute; left: 0; right: 0; top: 14px; height: 8px; background: repeating-linear-gradient(90deg, #e9d5ff 0 14px, #c084fc 14px 28px); }
+.cl-claw { position: absolute; left: 0; top: 0; width: 84px; height: 100%; pointer-events: none; z-index: 3; --drop: 140px; }
+.cl-rope { position: absolute; left: 50%; top: 18px; width: 4px; margin-left: -2px; height: 26px; background: #e2e8f0; transition: height .5s cubic-bezier(.5, 0, .5, 1); }
+.cl-hand { position: absolute; left: 50%; top: 44px; width: 70px; margin-left: -35px; height: 46px; transition: top .5s cubic-bezier(.5, 0, .5, 1); }
+.cl-hand::before { content: ''; position: absolute; left: 22px; right: 22px; top: 0; height: 14px; border-radius: 6px; background: linear-gradient(180deg, #fde68a, #f59e0b); }
+.cl-l, .cl-r { position: absolute; top: 10px; width: 10px; height: 36px; border-radius: 6px; background: #fbbf24; transition: transform .2s; }
+.cl-l { left: 14px; transform-origin: top; transform: rotate(28deg); }
+.cl-r { right: 14px; transform-origin: top; transform: rotate(-28deg); }
+.cl-claw.grab .cl-l { transform: rotate(8deg); }
+.cl-claw.grab .cl-r { transform: rotate(-8deg); }
+.cl-claw.down .cl-rope { height: calc(26px + var(--drop)); }
+.cl-claw.down .cl-hand { top: calc(44px + var(--drop)); }
+.cl-got { position: absolute; left: 50%; top: 30px; transform: translateX(-50%); font-size: 2.6rem; }
+.cl-dolls { position: absolute; left: 0; right: 0; bottom: 10px; display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px; padding: 0 10px; }
+.doll { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 16px; transition: transform .45s, opacity .3s; }
+.doll .df { font-size: clamp(2.4rem, 7vw, 3.4rem); filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
+.doll b { font: 700 clamp(.9rem, 2.6vw, 1.2rem) var(--en); background: #fff; color: var(--ink); padding: 2px 10px; border-radius: 10px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 3px 0 #c4b5fd; }
+.doll.lifted { opacity: 0; }
+.doll.wrongd { animation: shake .4s; }
+.doll.wrongd b { background: #fee2e2; }
+.doll.dud { opacity: .25; filter: grayscale(1); }
+.cl-glass { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .12) 40%, transparent 50%); }
+.cl-ctrl { display: flex; align-items: center; gap: 14px; }
+.cl-go small { font-size: .75rem; opacity: .8; }
+.cl-bag { font: 700 1.3rem var(--en); min-width: 70px; }
+
+/* 🏎️ 레이싱 */
+.race { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; transition: filter .2s; }
+.rc-hud { display: flex; align-items: center; gap: 14px; }
+.rc-speed { text-align: center; background: rgba(0, 0, 0, .35); padding: 6px 14px; border-radius: 14px; }
+.rc-speed b { display: block; font: 700 1.7rem var(--en); color: #fca5a5; line-height: 1; }
+.rc-speed small { color: var(--muted); font-size: .7rem; }
+.rc-road { position: relative; flex: 1; width: min(520px, 100%); min-height: 280px; overflow: hidden; border-radius: 18px;
+  background: linear-gradient(90deg, #15803d 0 7%, #e5e7eb 7% 8.5%, #374151 8.5% 91.5%, #e5e7eb 91.5% 93%, #15803d 93%); }
+.rc-stripes { position: absolute; top: 0; bottom: 0; left: 8.5%; right: 8.5%;
+  background-image: linear-gradient(#fde047 0 40px, transparent 40px 80px), linear-gradient(#fde047 0 40px, transparent 40px 80px);
+  background-size: 6px 80px, 6px 80px; background-position: 33.3% 0, 66.6% 0; background-repeat: repeat-y; opacity: .8; }
+.rc-gates { position: absolute; left: 8.5%; right: 8.5%; top: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 6px; will-change: transform; z-index: 2; }
+.gate { display: grid; place-items: center; height: 50px; border-radius: 12px; background: linear-gradient(180deg, #fff, #fee2e2); color: var(--ink); box-shadow: 0 5px 0 #b91c1c; border: 3px dashed #ef4444; }
+.gate b { font: 700 clamp(.85rem, 2.6vw, 1.15rem) var(--en); padding: 0 4px; text-align: center; word-break: break-word; }
+.gate.pass { background: #bbf7d0; border-color: #22c55e; box-shadow: 0 5px 0 #15803d; animation: bump .3s; }
+.gate.crash { background: #fecaca; animation: shake .4s; }
+.gate.dud { opacity: .25; }
+.rc-car { position: absolute; bottom: 26px; left: 50%; width: 64px; height: 64px; margin-left: -32px; display: grid; place-items: center; transform: rotate(90deg); font-size: 3.6rem; line-height: 1; transition: left .14s ease-out; z-index: 3; filter: drop-shadow(-6px 0 4px rgba(0, 0, 0, .4)); }
+.rc-car.boost { animation: boost .35s; }
+@keyframes boost { 50% { filter: drop-shadow(-18px 0 10px rgba(255, 210, 63, .9)); } }
+.rc-car.spin { animation: carspin .7s linear; }
+@keyframes carspin { from { transform: rotate(90deg); } to { transform: rotate(450deg); } }
+.rc-tap { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 4; background: transparent; }
+.rc-tap.l { left: 0; }
+.rc-tap.r { right: 0; }
+.rc-help, .sh-help { color: var(--muted); font-size: .8rem; }
+
+/* 🎯 사격 */
+.shoot { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; transition: filter .2s; }
+.sh-hud { display: flex; align-items: center; gap: 16px; }
+.sh-ammo { display: flex; gap: 4px; min-width: 120px; }
+.sh-ammo i { width: 12px; height: 28px; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, #fde68a, #b45309); box-shadow: 0 2px 0 #78350f; }
+.sh-ammo i.used { background: rgba(255, 255, 255, .15); box-shadow: none; }
+.sh-ammo .reload { font-weight: 800; color: #fde68a; animation: pulse .4s infinite alternate; }
+.sh-range { position: relative; flex: 1; width: min(760px, 100%); min-height: 260px; display: grid; grid-template-rows: repeat(3, 1fr); overflow: hidden; border-radius: 20px; cursor: crosshair;
+  background: linear-gradient(180deg, #0f766e, #134e4a); box-shadow: inset 0 0 0 6px #5eead4, inset 0 -30px 40px rgba(0, 0, 0, .3); }
+.sh-row { position: relative; border-bottom: 6px solid #78350f; }
+.tgt { position: absolute; left: 0; top: 50%; margin-top: -40px; height: 80px; padding: 0 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: crosshair; will-change: transform; }
+.tgt .ti { font-size: 2.2rem; line-height: 1; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .3)); }
+.tgt b { font: 700 clamp(.85rem, 2.4vw, 1.15rem) var(--en); background: #fff; color: var(--ink); padding: 2px 10px; border-radius: 10px; white-space: nowrap; box-shadow: 0 3px 0 #0f766e; }
+.tgt.hit { animation: tgtHit .35s forwards; }
+@keyframes tgtHit { to { opacity: 0; scale: 1.6; rotate: 25deg; } }
+.tgt.wrongt b { background: #fecaca; }
+.tgt.dud { opacity: .25; }
+.flash { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; pointer-events: none; z-index: 5; background: radial-gradient(circle, #fff 0 20%, #fde047 40%, transparent 70%); animation: flash .25s forwards; }
+@keyframes flash { to { transform: scale(2.2); opacity: 0; } }
+
 /* QR 코드 */
 .t-entry { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .t-entry-r { display: grid; gap: 10px; }

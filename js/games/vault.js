@@ -5,7 +5,7 @@ import { shake, bump } from '../fx.js';
 const ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 
 export default {
-  id: 'vault', title: '금고 깨기', emoji: '🔐', color: '#eab308', time: 90, isNew: true,
+  id: 'vault', title: '금고 깨기', emoji: '🔐', color: '#eab308', time: 90,
   desc: '뜻을 보고 알파벳을 하나씩 골라 금고 비밀번호(철자)를 맞혀요.',
   tags: ['🔤 철자'],
   items: ['time', 'double', 'shield', 'hint', 'skip'],
